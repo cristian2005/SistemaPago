@@ -11,7 +11,22 @@
 	<?php
 	include("conexion.php");
 	Conexion::getInstancia();
+  $miembros=Conexion::consulta("select concat(wpcp_pc_users.name,' ', wpcp_pc_users.username) as Miembro
+from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
+where   meta_key='Codigo' and wpcp_pc_user_meta.meta_value in(
+select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
+where user_id=11 and meta_key='codigo-del-referido');");
+  $membresia=Conexion::consulta("select meta_value as membresia from wpcp_pc_user_meta where meta_key='membresia' and user_id in(select wpcp_pc_user_meta.user_id
+from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
+where   meta_key='Codigo' and wpcp_pc_user_meta.meta_value in(
+select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
+where user_id=11 and meta_key='codigo-del-referido'));");
+$cons=Conexion::consulta("select categories from wpcp_pc_users");
+print_r(unserialize('a:1:{i:0;s:2:"29";}'));
+
 	?>
+ 
+
 	<div class="container">
 		<h1 style="text-align: center;">Weekly payment</h1>
 		<br><br>
@@ -54,7 +69,14 @@
     </tr>
   </thead>
   <tbody>
-   
+    <tr>
+      <?php for ($i=0; $i <count($miembros) ; $i++) { 
+         ?>
+      <td><?php echo $miembros[$i]->Miembro;?></td>
+      <td><?php echo $membresia[$i]->membresia;?></td>
+
+      <?php }?>
+    </tr>
   </tbody>
 </table>
 	</div>

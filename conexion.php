@@ -37,8 +37,10 @@ class Conexion
 		$dblink=self::getInstancia();
 		$resultado= mysqli_query($dblink,$query);
 		$rs= array();
-		while ($fila= mysqli_fetch_array($resultado)) {
-			$rs[]=$fila;
+		$contador=0;
+		while ($fila= mysqli_fetch_object($resultado)) {
+			$rs[$contador]=$fila;
+			$contador++;
 		}
 		return $rs;
 	}
