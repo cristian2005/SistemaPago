@@ -11,19 +11,42 @@
 	<?php
 	include("conexion.php");
 	Conexion::getInstancia();
-  $miembros=Conexion::consulta("select concat(wpcp_pc_users.name,' ', wpcp_pc_users.username) as Miembro
+//Obtener datos del usuario
+ function Get_User()
+ {
+  $temp=Conexion::consulta("select concat(wpcp_pc_users.name,' ', wpcp_pc_users.surname) as Miembro,categories
+  from wpcp_pc_users where id=".$_GET["id"]);
+  $categoria=Conexion::consulta("select wpcp_terms.name from wpcp_terms  where term_id=".unserialize($temp[0]->categories)[0]);
+  $User=array("Miembro"=>$temp[0]->Miembro,"Categoria"=>$categoria[0]->name);
+  return $User;
+ }
+ //End datos usuario
+
+$User=Get_User();
+  $IV=Conexion::consulta("select concat(wpcp_pc_users.name,' ', wpcp_pc_users.surname) as Miembro,wpcp_pc_users.id 
 from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
-where   meta_key='Codigo' and wpcp_pc_user_meta.meta_value in(
+where  meta_key='codigo-del-referido' and substring(categories,15,2)=31 OR substring(categories,15,2)=30 and wpcp_pc_user_meta.meta_value in(
 select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
-where user_id=11 and meta_key='codigo-del-referido');");
+where user_id=".$_GET["id"]." and meta_key='Codigo');");
   $membresia=Conexion::consulta("select meta_value as membresia from wpcp_pc_user_meta where meta_key='membresia' and user_id in(select wpcp_pc_user_meta.user_id
 from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
-where   meta_key='Codigo' and wpcp_pc_user_meta.meta_value in(
+where   meta_key='codigo-del-referido'  and wpcp_pc_user_meta.meta_value in(
 select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
-where user_id=11 and meta_key='codigo-del-referido'));");
-$cons=Conexion::consulta("select categories from wpcp_pc_users");
-print_r(unserialize('a:1:{i:0;s:2:"29";}'));
+where user_id=".$_GET["id"]." and meta_key='Codigo'));");
 
+  if(isset($_GET["iv"]))
+  {
+    $membresia_iv=Conexion::consulta("select meta_value as membresia from wpcp_pc_user_meta where meta_key='membresia' and user_id in(select wpcp_pc_user_meta.user_id
+from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
+where   meta_key='codigo-del-referido' and wpcp_pc_user_meta.meta_value in(
+select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
+where user_id=".$_GET["iv"]." and meta_key='Codigo'));");
+    $miembro_iv=Conexion::consulta("select concat(wpcp_pc_users.name,' ', wpcp_pc_users.surname) as Miembro,wpcp_pc_users.id 
+from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
+where   meta_key='codigo-del-referido' and wpcp_pc_user_meta.meta_value in(
+select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
+where user_id=".$_GET["iv"]." and meta_key='Codigo');");
+  }
 	?>
  
 
@@ -35,8 +58,20 @@ print_r(unserialize('a:1:{i:0;s:2:"29";}'));
 				<div class="d-flex flex-row bd-highlight mb-3">
   <div class="p-2 bd-highlight"><h3>LV:</h3></div>
   <div class="p-2 bd-highlight">
-  	<select class="form-control">
-  		<option>ajsdjkajsdjka</option>
+  	<select  class="form-control">
+      <?php if ($User["Categoria"]=="Moderador") { ?>
+  		<option><?php echo $User["Miembro"]?></option>
+      <?php }
+      else
+      {
+        $moderador=Conexion::consulta("select concat(wpcp_pc_users.name,' ', wpcp_pc_users.surname) as Miembro,wpcp_pc_users.id 
+from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
+where meta_key='Codigo' and wpcp_pc_user_meta.meta_value in(
+select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
+where user_id=".$_GET["id"]." and meta_key='codigo-del-referido');");
+        echo "<option disabled selected value='".$moderador[0]->id."'>".$moderador[0]->Miembro."</option>";
+      }
+      ?>
   	</select>
   </div>
 </div>
@@ -47,8 +82,24 @@ print_r(unserialize('a:1:{i:0;s:2:"29";}'));
 				<div class="d-flex flex-row bd-highlight mb-3">
   <div class="p-2 bd-highlight"><h3>IV:</h3></div>
   <div class="p-2 bd-highlight">
-  	<select class="form-control">
-  		<option>ajsdjkajsdjka</option>
+  	<select id="iv"  class="form-control">
+     <?php 
+if ($User["Categoria"]=="Moderador") {
+    for ($i=0; $i <count($IV) ; $i++) { 
+       ?>
+      <option <?php if(isset($_GET["iv"])){ if($_GET["iv"]==$IV[$i]->id) echo "selected";} ?> value="<?php echo $IV[$i]->id;?>"><?php echo $IV[$i]->Miembro;?></option>
+      
+      <?php }} else if($User["Categoria"]=="Inscriptor") {?>
+        <option disabled selected><?php echo $User["Miembro"]?></option>
+  		<?php 
+      } 
+else
+{
+  echo "<script>alert('Este tipo de usuario no es válido en esta página');window.location='./';</script>";
+  exit();
+}
+      ?>
+      <option <?php echo (isset($_GET["iv"])||$User["Categoria"]=="Inscriptor")?"":"selected";?>  disabled>Seleccionar IV</option>
   	</select>
   </div>
 </div>
@@ -69,14 +120,32 @@ print_r(unserialize('a:1:{i:0;s:2:"29";}'));
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <?php for ($i=0; $i <count($miembros) ; $i++) { 
-         ?>
-      <td><?php echo $miembros[$i]->Miembro;?></td>
-      <td><?php echo $membresia[$i]->membresia;?></td>
-
-      <?php }?>
-    </tr>
+     <?php
+      if (isset($membresia_iv)) {
+      for ($i=0; $i <count($membresia_iv) ; $i++) { 
+        
+     ?>
+   <tr>
+    <td><?php echo $miembro_iv[$i]->Miembro?></td>
+    <td><?php echo $membresia_iv[$i]->membresia?></td>
+   </tr>
+   <?php }}?>
+    <?php
+      if (isset($membresia) && $User["Categoria"]=="Inscriptor") {
+      for ($i=0; $i <count($membresia) ; $i++) { 
+        
+     ?>
+   <tr>
+    <td><?php echo $IV[$i]->Miembro;?></td>
+    <td><?php echo $membresia[$i]->membresia;?></td>
+    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
+    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
+    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
+    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
+    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
+    <td></td>
+   </tr>
+   <?php }}?>
   </tbody>
 </table>
 	</div>
@@ -112,8 +181,34 @@ print_r(unserialize('a:1:{i:0;s:2:"29";}'));
     }
         }
     } );
+     $('#iv').change(function(){
+      window.location='/Sistemapago?id=<?php echo $_GET['id']?>'+'&iv='+this.value;
+     });
 } );
 </script>
+
+<!-- Modal pago -->
+<div class="modal" tabindex="-1" id="modalpago" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Modal title</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Modal body text goes here.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cierre del modal pago -->
 </body>
 
 </html>
