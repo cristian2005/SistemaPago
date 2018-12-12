@@ -20,6 +20,9 @@ $id_iv=0;
 	include("conexion.php");
 	Conexion::getInstancia();
 
+header("Cache-Control: no-cache, must-revalidate");
+header("Expires: Sat, 1 Jul 2000 05:00:00 GMT");
+
 #region Abonar
 if (isset($_GET["abono"])) {
     $consu=Conexion::Ejecutar("insert into wpcp_pagos(`Id_usuario`, `Abono`) values(".$_GET["id"].",".$_GET["abono"].")");
