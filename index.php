@@ -3,6 +3,10 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Metodo de pago</title>
+  <meta http-equiv="Expires" content="0">
+  <meta http-equiv="Last-Modified" content="0">
+  <meta http-equiv="Cache-Control" content="no-cache, mustrevalidate">
+  <meta http-equiv="Pragma" content="no-cache">
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
   <link rel="stylesheet" type="text/css" href="cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
   <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.18/datatables.min.css"/>
@@ -282,7 +286,7 @@ else
         }
     } );
      $('#iv').change(function(){
-      window.location='/Sistemapago?id=<?php echo $_GET['id']?>'+'&iv='+this.value;
+      window.location='/SistemaPago?id=<?php echo $_GET['id']?>'+'&iv='+this.value;
      });
      $('#todo').click(function(){
       this.href="?id="+id+"&abono="+abonado+"&id_iv=<?php echo $id_iv;?>";
