@@ -9,8 +9,29 @@
 </head>
 <body>
 	<?php
+define("Regular",100);
+define("Premium",200);
+define("Eventual",150);
+$id_iv=0;
 	include("conexion.php");
 	Conexion::getInstancia();
+
+#region Abonar
+if (isset($_GET["abono"])) {
+    $consu=Conexion::Ejecutar("insert into wpcp_pagos(`Id_usuario`, `Abono`) values(".$_GET["id"].",".$_GET["abono"].")");
+    if ($consu) {
+      echo "<script>window.location='?id=".$_GET["id_iv"]."';</script>";
+    }
+    else
+  {
+    echo "<script>window.location='?id=".$_GET["id_iv"]."';alert('Ocurrió un error inesperado');</script>";
+  }
+  exit();
+}
+#end region
+
+
+
 //Obtener datos del usuario
  function Get_User()
  {
@@ -23,11 +44,12 @@
  //End datos usuario
 
 $User=Get_User();
-  $IV=Conexion::consulta("select concat(wpcp_pc_users.name,' ', wpcp_pc_users.surname) as Miembro,wpcp_pc_users.id 
+  $IV=Conexion::consulta("
+select concat(wpcp_pc_users.name,' ', wpcp_pc_users.surname) as Miembro,wpcp_pc_users.id 
 from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
-where  meta_key='codigo-del-referido' and substring(categories,15,2)=31 OR substring(categories,15,2)=30 and wpcp_pc_user_meta.meta_value in(
+where  meta_key='codigo-del-referido' and case when substring(categories,15,2)=31 then substring(categories,15,2)=31  else substring(categories,15,2)=30 end and wpcp_pc_user_meta.meta_value in(
 select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
-where user_id=".$_GET["id"]." and meta_key='Codigo');");
+where user_id=".$_GET['id']." and meta_key='Codigo');");
   $membresia=Conexion::consulta("select meta_value as membresia from wpcp_pc_user_meta where meta_key='membresia' and user_id in(select wpcp_pc_user_meta.user_id
 from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
 where   meta_key='codigo-del-referido'  and wpcp_pc_user_meta.meta_value in(
@@ -47,6 +69,86 @@ where   meta_key='codigo-del-referido' and wpcp_pc_user_meta.meta_value in(
 select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
 where user_id=".$_GET["iv"]." and meta_key='Codigo');");
   }
+
+//Function que organiza las celdas
+  function Organizar_Celdas($membresia,$total,$contador,$html,$id_user)
+  {
+    if($total>=$membresia)
+          {
+             for ($i=1; $i <=5-$contador ; $i++) { 
+            $html.='<td></td>';
+            }
+            $html.='<td><span>Pagado<span></td>';
+           
+          }
+        else
+          {
+            $resto=$membresia-$total;
+      $html.= '<td><a data-toggle="modal" data-id="'.$id_user.'" data-abonado="'.$resto.'" onclick="AdministrarPago(event);" style="color:white;" data-target="#modalpago" class="btn btn-info btn-sm btn-">Pagar</a></td>';
+            //Agregando fila vacias
+            for ($i=1; $i <5-$contador ; $i++) { 
+              $html.='<td></td>';
+            }
+            $html.='<td><span>'.$resto.'<span></td>';
+          }
+          return $html;
+  }
+
+  //Obteniendo los pagos
+  function Get_Pagos($id,$membresia)
+  {
+    $html='';
+    $pagos=Conexion::consulta("select * from wpcp_pagos where Id_usuario=".$id);
+    $total=0;
+    $contador=0;
+    if ($pagos) {
+      ////Asigando los pagos que ha hecho
+      foreach ($pagos as  $value) {
+       $contador++;
+       $html.= '<td><span data-toggle="tooltip" data-placement="top" title="'.date("d/m/y",strtotime($value->Fecha)).'">'.$value->Abono.'</span></td>';
+       $total=$total+$value->Abono;
+      }
+      
+      //Asignando el boton de pagar y sus celdas vacias
+      switch ($membresia) {
+        case 'Regular':
+$html=Organizar_Celdas(Regular,$total,$contador,$html,$id);
+          break;
+        case 'Premium':
+$html=Organizar_Celdas(Premium,$total,$contador,$html,$id);
+         
+          break;
+          case 'Eventual':
+$html=Organizar_Celdas(Eventual,$total,$contador,$html,$id);
+          break;
+        default:
+         
+          break;
+      }
+    }
+     else
+     {
+       switch ($membresia) {
+        case 'Regular':
+$resto=Regular;
+          break;
+        case 'Premium':
+$resto=Premium;
+          break;
+          case 'Eventual':
+$resto=Eventual;
+          break;
+        default:
+         
+          break;
+      }
+      $html='<td><a data-toggle="modal" data-id="'.$id.'" data-abonado="'.$resto.'" onclick="AdministrarPago(event);" style="color:white;" data-target="#modalpago" class="btn btn-info btn-sm btn-">Pagar</a></td>
+ <td></td><td></td><td></td><td></td> <td><span>'.$resto.'</span></td>
+      ';
+     }
+      return $html;
+  }
+  
 	?>
  
 
@@ -128,6 +230,8 @@ else
    <tr>
     <td><?php echo $miembro_iv[$i]->Miembro?></td>
     <td><?php echo $membresia_iv[$i]->membresia?></td>
+    <?php echo Get_Pagos($miembro_iv[$i]->id,$membresia_iv[$i]->membresia); $id_iv=$_GET["iv"];?>
+
    </tr>
    <?php }}?>
     <?php
@@ -138,12 +242,8 @@ else
    <tr>
     <td><?php echo $IV[$i]->Miembro;?></td>
     <td><?php echo $membresia[$i]->membresia;?></td>
-    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
-    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
-    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
-    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
-    <td><a class="btn  btn-info btn-sm btn-">Pagar</a></td>
-    <td></td>
+    <?php echo Get_Pagos($IV[$i]->id,$membresia[$i]->membresia); $id_iv=$_GET["id"];?>
+   
    </tr>
    <?php }}?>
   </tbody>
@@ -184,7 +284,20 @@ else
      $('#iv').change(function(){
       window.location='/Sistemapago?id=<?php echo $_GET['id']?>'+'&iv='+this.value;
      });
+     $('#todo').click(function(){
+      this.href="?id="+id+"&abono="+abonado+"&id_iv=<?php echo $id_iv;?>";
+     });
+      $('#abonar').click(function(){
+      this.href="?id="+id+"&abono="+$('#txtabono').val()+"&id_iv=<?php echo $id_iv;?>";
+     });
+      $('[data-toggle="tooltip"]').tooltip();
 } );
+  var id=0,abonado=0;
+  function AdministrarPago(e)
+  {
+     id=e.target.dataset.id;
+     abonado=e.target.dataset.abonado;
+  }
 </script>
 
 <!-- Modal pago -->
@@ -192,17 +305,26 @@ else
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Modal title</h5>
+        <h5 class="modal-title">Abonar</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        <p>Modal body text goes here.</p>
+        <form class="form-inline">
+  <div class="form-group mb-2">
+    
+    <input type="text" id="txtabono" placeholder="Monto a bonar" class="form-control" >
+  </div>
+  <div class="form-group mx-sm-3 mb-2">
+  <a style="color:white;" id="abonar" class="btn btn-primary ">Abonar</a>
+  
+  </div>
+  <a style="color:white;" id="todo" class="btn btn-success mb-2">Pagar todo</a>
+</form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary">Save changes</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
