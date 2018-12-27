@@ -26,9 +26,9 @@ header("Expires: Sat, 1 Jul 2000 05:00:00 GMT");
 
 #region Abonar
 if (isset($_GET["abono"])) {
-    $consu=Conexion::Ejecutar("insert into wpcp_pagos(`Id_usuario`, `Abono`) values(".$_GET["id"].",".$_GET["abono"].")");
+    $consu=Conexion::Ejecutar("insert into wpcp_pagos(`Id_usuario`, `Abono`) values(".$_GET["id_pagou"].",".$_GET["abono"].")");
     if ($consu) {
-      echo "<script>window.location='?id=".$_GET["id_iv"]."';</script>";
+      echo "<script>window.location='?id=".$_GET["id"]."&iv=".$_GET["id_iv"]."';</script>";
     }
     else
   {
@@ -292,18 +292,17 @@ else
       window.location='/SistemaPago?id=<?php echo $_GET['id']?>'+'&iv='+this.value;
      });
      $('#todo').click(function(){
-      this.href="?id="+id+"&abono="+abonado+"&id_iv=<?php echo $id_iv;?>";
+      this.href="?id=<?php echo $_GET['id']?>&id_pagou="+id+"&abono="+abonado+"&id_iv=<?php echo (isset($_GET['iv']))?$_GET["iv"]:'';?>";
      });
       $('#abonar').click(function(){
-
-      this.href="?id="+id+"&abono="+$('#txtabono').val()+"&id_iv=<?php echo $_GET["iv"];?>";
+      this.href="?id=<?php echo $_GET['id']?>&id_pagou="+id+"&abono="+$('#txtabono').val()+"&id_iv=<?php echo (isset($_GET['iv']))?$_GET["iv"]:'';?>";
      });
       $('[data-toggle="tooltip"]').tooltip();
 } );
   var id=0,abonado=0;
   function AdministrarPago(e)
   {
-     id='<?php echo $User["id"]; ?>'
+     id=e.target.dataset.id;
      abonado=e.target.dataset.abonado;
   }
 </script>
