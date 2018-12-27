@@ -23,6 +23,7 @@ $id_iv=0;
 header("Cache-Control: no-cache, must-revalidate");
 header("Expires: Sat, 1 Jul 2000 05:00:00 GMT");
 
+
 #region Abonar
 if (isset($_GET["abono"])) {
     $consu=Conexion::Ejecutar("insert into wpcp_pagos(`Id_usuario`, `Abono`) values(".$_GET["id"].",".$_GET["abono"].")");
@@ -31,7 +32,7 @@ if (isset($_GET["abono"])) {
     }
     else
   {
-    echo "<script>window.location='?id=".$_GET["id_iv"]."';alert('Ocurrió un error inesperado');</script>";
+    echo "<script>window.location='https://www.comunitypowerdom.org/my-account/';alert('Ocurrió un error inesperado');</script>";
   }
   exit();
 }
@@ -42,26 +43,25 @@ if (isset($_GET["abono"])) {
 //Obtener datos del usuario
  function Get_User()
  {
-  $temp=Conexion::consulta("select concat(wpcp_pc_users.name,' ', wpcp_pc_users.surname) as Miembro,categories
-  from wpcp_pc_users where id=".$_GET["id"]);
+  $temp=Conexion::consulta("select concat(wpcp_pc_users.name,' ', wpcp_pc_users.surname) as Miembro,categories,id
+  from wpcp_pc_users where wp_user_id=".$_GET["id"]);
   $categoria=Conexion::consulta("select wpcp_terms.name from wpcp_terms  where term_id=".unserialize($temp[0]->categories)[0]);
-  $User=array("Miembro"=>$temp[0]->Miembro,"Categoria"=>$categoria[0]->name);
+  $User=array("Miembro"=>$temp[0]->Miembro,"Categoria"=>$categoria[0]->name,"id"=>$temp[0]->id);
   return $User;
  }
  //End datos usuario
-
 $User=Get_User();
   $IV=Conexion::consulta("
 select concat(wpcp_pc_users.name,' ', wpcp_pc_users.surname) as Miembro,wpcp_pc_users.id 
 from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
 where  meta_key='codigo-del-referido' and case when substring(categories,15,2)=31 then substring(categories,15,2)=31  else substring(categories,15,2)=30 end and wpcp_pc_user_meta.meta_value in(
 select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
-where user_id=".$_GET['id']." and meta_key='Codigo');");
+where user_id=".$User['id']." and meta_key='Codigo');");
   $membresia=Conexion::consulta("select meta_value as membresia from wpcp_pc_user_meta where meta_key='membresia' and user_id in(select wpcp_pc_user_meta.user_id
 from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
 where   meta_key='codigo-del-referido'  and wpcp_pc_user_meta.meta_value in(
 select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
-where user_id=".$_GET["id"]." and meta_key='Codigo'));");
+where user_id=".$User['id']." and meta_key='Codigo'));");
 
   if(isset($_GET["iv"]))
   {
@@ -177,7 +177,7 @@ $resto=Eventual;
 from wpcp_pc_users inner join wpcp_pc_user_meta on wpcp_pc_users.id=wpcp_pc_user_meta.user_id
 where meta_key='Codigo' and wpcp_pc_user_meta.meta_value in(
 select wpcp_pc_user_meta.meta_value from wpcp_pc_user_meta
-where user_id=".$_GET["id"]." and meta_key='codigo-del-referido');");
+where user_id=".$User['id']." and meta_key='codigo-del-referido');");
         echo "<option disabled selected value='".$moderador[0]->id."'>".$moderador[0]->Miembro."</option>";
       }
       ?>
@@ -204,7 +204,7 @@ if ($User["Categoria"]=="Moderador") {
       } 
 else
 {
-  echo "<script>alert('Este tipo de usuario no es válido en esta página');window.location='./';</script>";
+  echo "<script>alert('Este tipo de usuario no es válido en esta página');window.location='https://www.comunitypowerdom.org/my-account/';</script>";
   exit();
 }
       ?>
@@ -295,14 +295,15 @@ else
       this.href="?id="+id+"&abono="+abonado+"&id_iv=<?php echo $id_iv;?>";
      });
       $('#abonar').click(function(){
-      this.href="?id="+id+"&abono="+$('#txtabono').val()+"&id_iv=<?php echo $id_iv;?>";
+
+      this.href="?id="+id+"&abono="+$('#txtabono').val()+"&id_iv=<?php echo $_GET["iv"];?>";
      });
       $('[data-toggle="tooltip"]').tooltip();
 } );
   var id=0,abonado=0;
   function AdministrarPago(e)
   {
-     id=e.target.dataset.id;
+     id='<?php echo $User["id"]; ?>'
      abonado=e.target.dataset.abonado;
   }
 </script>
